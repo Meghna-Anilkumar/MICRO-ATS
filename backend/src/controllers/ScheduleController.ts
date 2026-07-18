@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { ICandidateService } from "../interfaces/ICandidateService";
+import { IInterviewerService } from "../interfaces/IInterviewerService";
 import { isAppError } from "../utils/isAppError";
-import InterviewerService from "../services/InterviewerService";
 
 export default class ScheduleController {
   constructor(
     private candidateService: ICandidateService,
-    private interviewerService: InterviewerService
+    private interviewerService: IInterviewerService
   ) { }
 
   createCandidate = async (req: Request, res: Response) => {

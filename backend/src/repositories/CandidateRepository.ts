@@ -10,18 +10,10 @@ class CandidateRepository
     super(Candidate);
   }
 
-  async createCandidate(data: { name: string; email: string }): Promise<ICandidate> {
-    return this.create(data);
-  }
-
-  async findAll() {
+  async findAllWithInterviewers(): Promise<ICandidate[]> {
     return this.model
       .find()
       .populate("interviewSlots.interviewerId");
-  }
-
-  async findById(id: string) {
-    return this.model.findById(id);
   }
 
   async addInterviewSlot(
@@ -39,21 +31,6 @@ class CandidateRepository
             timeBlock
           }
         }
-      },
-      {
-        new: true
-      }
-    );
-  }
-
-  async updateStatus(
-    candidateId: string,
-    status: string
-  ) {
-    return this.model.findByIdAndUpdate(
-      candidateId,
-      {
-        status
       },
       {
         new: true

@@ -9,18 +9,6 @@ export default class InterviewerRepository extends BaseRepository<IInterviewer> 
     super(Interviewer);
   }
 
-  async findAll(): Promise<IInterviewer[]> {
-    return this.model.find();
-  }
-
-  async findById(id: string): Promise<IInterviewer | null> {
-    return this.model.findById(id);
-  }
-
-  async createInterviewer(data: { name: string; email: string }): Promise<IInterviewer> {
-    return this.create(data);
-  }
-
   async reserveTimeBlock(id: string, timeBlock: ITimeBlock): Promise<IInterviewer | null> {
     return this.model.findOneAndUpdate(
       {

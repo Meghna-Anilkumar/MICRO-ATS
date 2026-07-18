@@ -1,7 +1,8 @@
 import { IInterviewer } from "../models/Interviewer";
 import { IInterviewerRepository } from "../interfaces/IInterviewerRepository";
+import { IInterviewerService } from "../interfaces/IInterviewerService";
 
-export default class InterviewerService {
+export default class InterviewerService implements IInterviewerService {
 
     constructor(
         private interviewerRepository: IInterviewerRepository
@@ -18,7 +19,7 @@ export default class InterviewerService {
             throw new Error("Name and email are required");
         }
 
-        return this.interviewerRepository.createInterviewer({
+        return this.interviewerRepository.create({
             name: data.name.trim(),
             email: data.email.trim().toLowerCase(),
         });

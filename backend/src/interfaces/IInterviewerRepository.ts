@@ -1,13 +1,8 @@
 import { IInterviewer } from "../models/Interviewer";
 import { ITimeBlock } from ".";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IInterviewerRepository {
-
-    findAll(): Promise<IInterviewer[]>;
-
-    findById(id: string): Promise<IInterviewer | null>;
-
-    createInterviewer(data: { name: string; email: string }): Promise<IInterviewer>;
+export interface IInterviewerRepository extends IBaseRepository<IInterviewer> {
 
     reserveTimeBlock(id: string, timeBlock: ITimeBlock): Promise<IInterviewer | null>;
 

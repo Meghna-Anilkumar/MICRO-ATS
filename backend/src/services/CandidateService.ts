@@ -19,7 +19,7 @@ export default class CandidateService
         if (!data.name?.trim() || !data.email?.trim()) {
             throw new Error("Name and email are required");
         }
-        return this.candidateRepository.createCandidate({
+        return this.candidateRepository.create({
             name: data.name.trim(),
             email: data.email.trim().toLowerCase(),
         });
@@ -89,10 +89,24 @@ export default class CandidateService
         );
 
         if (!reservation) {
+            const conflicts = await this.candidateRepository.findOverlappingSlots(
+                data.interviewerId,
+                data.timeBlock
+            );
+            const conflictingCandidate = conflicts[0];
+            const conflictingSlot = conflictingCandidate?.interviewSlots.find((slot) =>
+                String(slot.interviewerId ?? "") === data.interviewerId &&
+                slot.timeBlock.start < end && slot.timeBlock.end > start
+            );
+
             throw {
                 status: 409,
                 success: false,
                 message: "Interviewer already booked",
+                conflict: conflictingCandidate && conflictingSlot ? {
+                    candidateName: conflictingCandidate.name,
+                    timeBlock: conflictingSlot.timeBlock,
+                } : undefined,
             };
         }
 
@@ -139,11 +153,14 @@ export default class CandidateService
         id: string,
         status: string
     ): Promise<ICandidate> {
-        const candidate =
-            await this.candidateRepository.updateStatus(
-                id,
-                status
-            );
+        const allowedStatuses = ["Applied", "Technical Round", "Offered"] as const;
+        if (!allowedStatuses.includes(status as (typeof allowedStatuses)[number])) {
+            throw { status: 400, success: false, message: "Invalid candidate status" };
+        }
+
+        const candidate = await this.candidateRepository.update(id, {
+            status: status as ICandidate["status"],
+        });
 
         if (!candidate) {
             throw {
@@ -157,6 +174,6 @@ export default class CandidateService
     }
 
     async getCandidates(): Promise<ICandidate[]> {
-        return this.candidateRepository.findAll();
+        return this.candidateRepository.findAllWithInterviewers();
     }
 }

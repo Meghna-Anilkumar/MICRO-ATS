@@ -1,15 +1,8 @@
 import { ICandidate } from "../models/Candidate";
 import { ITimeBlock } from ".";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface ICandidateRepository {
-  createCandidate(data: { name: string; email: string }): Promise<ICandidate>;
-
-  findById(id: string): Promise<ICandidate | null>;
-
-  updateStatus(
-    id: string,
-    status: string
-  ): Promise<ICandidate | null>;
+export interface ICandidateRepository extends IBaseRepository<ICandidate> {
 
   addInterviewSlot(
     id: string,
@@ -22,5 +15,5 @@ export interface ICandidateRepository {
     timeBlock: ITimeBlock
   ): Promise<ICandidate[]>;
 
-  findAll(): Promise<ICandidate[]>;
+  findAllWithInterviewers(): Promise<ICandidate[]>;
 }

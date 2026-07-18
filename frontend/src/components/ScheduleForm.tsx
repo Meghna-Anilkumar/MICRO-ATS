@@ -1,34 +1,13 @@
+import { useFormik } from "formik";
 import type { Candidate, Interviewer, ScheduleDraft } from "../types";
 import { SelectField } from "./SelectField";
 
-type Props = {
-  candidates: Candidate[];
-  interviewers: Interviewer[];
-  selectedCandidateId: string;
-  selectedInterviewerId: string;
-  start: string;
-  end: string;
-  onCandidateChange: (id: string) => void;
-  onInterviewerChange: (id: string) => void;
-  onTimesChange: (times: { start: string; end: string }) => void;
-  onAddPerson: (kind: "candidate" | "interviewer") => void;
-  onSubmit: (draft: ScheduleDraft) => void;
-};
-
-export function ScheduleForm(props: Props) {
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!props.selectedCandidateId || !props.selectedInterviewerId || !props.start || !props.end) return;
-    props.onSubmit({ candidateId: props.selectedCandidateId, interviewerId: props.selectedInterviewerId, timeBlock: { start: new Date(props.start).toISOString(), end: new Date(props.end).toISOString() } });
-  };
-  return <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-    <div><p className="text-sm font-semibold uppercase tracking-widest text-blue-600">Booking</p><h2 className="mt-1 text-xl font-bold text-slate-950">Schedule an interview</h2><p className="mt-1 text-sm text-slate-500">Conflicting times are blocked automatically.</p></div>
-    <form onSubmit={submit} className="mt-6 grid gap-5 md:grid-cols-2">
-      <SelectField label="Interviewer" value={props.selectedInterviewerId} placeholder="Choose an interviewer" options={props.interviewers.map((person) => ({ value: person._id, label: `${person.name} · ${person.email}` }))} onChange={props.onInterviewerChange} onAdd={() => props.onAddPerson("interviewer")} />
-      <SelectField label="Candidate" value={props.selectedCandidateId} placeholder="Choose a candidate" options={props.candidates.map((person) => ({ value: person._id, label: `${person.name} · ${person.email}` }))} onChange={props.onCandidateChange} onAdd={() => props.onAddPerson("candidate")} />
-      <label className="block text-sm font-semibold text-slate-700">Start time<input required type="datetime-local" value={props.start} onChange={(event) => props.onTimesChange({ start: event.target.value, end: props.end })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label>
-      <label className="block text-sm font-semibold text-slate-700">End time<input required type="datetime-local" value={props.end} onChange={(event) => props.onTimesChange({ start: props.start, end: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-3 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label>
-      <button className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 md:col-span-2">Review interview booking</button>
-    </form>
-  </section>;
+type Values = { candidateId: string; interviewerId: string; start: string; end: string };
+type Props = { candidates: Candidate[]; interviewers: Interviewer[]; initialValues: Values; onInterviewerChange: (id: string) => void; onAddPerson: (kind: "candidate" | "interviewer") => void; onSubmit: (draft: ScheduleDraft) => void };
+const validate = (values: Values) => { const errors: Partial<Record<keyof Values, string>> = {}; if (!values.interviewerId) errors.interviewerId = "Choose the interviewer conducting this interview."; if (!values.candidateId) errors.candidateId = "Choose a candidate to continue."; if (!values.start) errors.start = "Choose a start date and time."; if (!values.end) errors.end = "Choose an end date and time."; if (values.start && values.end && new Date(values.start) >= new Date(values.end)) errors.end = "End time must be later than start time."; return errors; };
+export function ScheduleForm({ candidates, interviewers, initialValues, onInterviewerChange, onAddPerson, onSubmit }: Props) {
+  const formik = useFormik<Values>({ enableReinitialize: true, initialValues, validate, validateOnBlur: true, validateOnChange: true, onSubmit: (values) => onSubmit({ candidateId: values.candidateId, interviewerId: values.interviewerId, timeBlock: { start: new Date(values.start).toISOString(), end: new Date(values.end).toISOString() } }) });
+  const error = (field: keyof Values) => formik.touched[field] ? formik.errors[field] : undefined;
+  return <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div><p className="text-sm font-semibold uppercase tracking-widest text-violet-600">Booking</p><h2 className="mt-1 text-xl font-bold text-slate-950">Schedule an interview</h2><p className="mt-1 text-sm text-slate-500">All times appear in your local timezone; conflicts are checked by the server.</p></div><form onSubmit={formik.handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2"><SelectField label="Interviewer" value={formik.values.interviewerId} placeholder="Select interviewer" options={interviewers.map((person) => ({ value: person._id, label: `${person.name} · ${person.email}` }))} onChange={(id) => { formik.setFieldTouched("interviewerId", true); formik.setFieldValue("interviewerId", id); onInterviewerChange(id); }} onAdd={() => onAddPerson("interviewer")} error={error("interviewerId")} /><SelectField label="Candidate" value={formik.values.candidateId} placeholder="Select candidate" options={candidates.map((person) => ({ value: person._id, label: `${person.name} · ${person.email}` }))} onChange={(id) => { formik.setFieldTouched("candidateId", true); formik.setFieldValue("candidateId", id); }} onAdd={() => onAddPerson("candidate")} error={error("candidateId")} /><DateField label="Start date & time" name="start" formik={formik} error={error("start")} /><DateField label="End date & time" name="end" formik={formik} error={error("end")} /><button className="justify-self-start rounded-xl bg-violet-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200 md:col-span-2">Review booking</button></form></section>;
 }
+function DateField({ label, name, formik, error }: { label: string; name: "start" | "end"; formik: ReturnType<typeof useFormik<Values>>; error?: string }) { return <label className="block text-sm font-semibold text-slate-700">{label}<input name={name} type="datetime-local" value={formik.values[name]} onChange={formik.handleChange} onBlur={formik.handleBlur} className={`mt-1.5 w-full rounded-xl border px-3 py-3 text-sm shadow-sm outline-none transition focus:ring-4 ${error ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100" : "border-slate-300 focus:border-violet-500 focus:ring-violet-100"}`} />{error && <span className="mt-1 block text-xs font-medium text-rose-600">{error}</span>}</label>; }
